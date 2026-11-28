@@ -4,7 +4,6 @@ struct EstimationSolution{L,X,M}
     model::M
 end
 
-
 """
     EstimationUtils
 
@@ -16,7 +15,7 @@ Concrete implementations are expected to subtype `AbstractEstimationModel` and
 """
 
 module EstimationUtils
-    using Roots: @set
+using Roots: @set
 #mandatory API for AbstractEstimationModel
 
 """
@@ -32,21 +31,25 @@ of type `M` together with the metadata needed to map a flat parameter vector
 
 Every concrete subtype must implement:
 
-- [`set_eos_parameters!(estimation_model, Θ)`](@ref): write the flat parameter  vector `Θ` into the wrapped EoS model in-place.
-- [`get_eos_parameters(estimation_model)`](@ref): extract a flat parameter  vector `Θ` from the wrapped EoS model.
-- [`set_model(estimation_model, new_model)`](@ref): return a new instance of  the estimation model that wraps `new_model` instead of the current one.
-- [`get_model(estimation_model)`](@ref): return the EoS model currently stored inside the estimation wrapper.
+  - [`set_eos_parameters!(estimation_model, Θ)`](@ref): write the flat parameter  vector `Θ` into the wrapped EoS model in-place.
+  - [`get_eos_parameters(estimation_model)`](@ref): extract a flat parameter  vector `Θ` from the wrapped EoS model.
+  - [`set_model(estimation_model, new_model)`](@ref): return a new instance of  the estimation model that wraps `new_model` instead of the current one.
+  - [`get_model(estimation_model)`](@ref): return the EoS model currently stored inside the estimation wrapper.
 
 `set_model` and `get_model` have default implementations that assume that the model is stored in a `model` field.
 
 # Optional interface
 
-- [`parameter_length(estimation_model)`](@ref): return the amount of parameters that are being manipulated.
-- [`lower_bounds(estimation_model)`](@ref): return a flat vector of lower bounds for `Θ`, with `-Inf` for unconstrained parameters.
-- [`upper_bounds(estimation_model)`](@ref): return a flat vector of upper bounds for `Θ`, with `+Inf` for unconstrained parameters.
-- [`initial_guess(estimation_model)`](@ref): return a flat vector of starting values for the optimiser, they may be different that the current stored parameters in the EoS model.
+  - [`parameter_length(estimation_model)`](@ref): return the amount of parameters that are being manipulated.
 
--
+  - [`lower_bounds(estimation_model)`](@ref): return a flat vector of lower bounds for `Θ`, with `-Inf` for unconstrained parameters.
+
+  - [`upper_bounds(estimation_model)`](@ref): return a flat vector of upper bounds for `Θ`, with `+Inf` for unconstrained parameters.
+
+  - [`initial_guess(estimation_model)`](@ref): return a flat vector of starting values for the optimiser, they may be different that the current stored parameters in the EoS model.
+
+  -
+
 # Indexing and broadcasting
 
 The abstract type provides fallback implementations of
@@ -71,7 +74,6 @@ The two-argument form operates on `estimation_model`'s own internal model.
 The three-argument form first calls [`set_model`](@ref) to swap in `eos_model` and then delegates to the two-argument form, allowing a foreign EoS instance to be updated using the same index/factor metadata.
 """
 function set_eos_parameters! end
-
 
 """
     Θ = get_eos_parameters(estimation_model::AbstractEstimationModel{M})
@@ -103,8 +105,8 @@ Implementing this function is optional; it enables named indexing via
 """
 function symbol_indices end
 
-function symbol_indices(model,syms::AbstractVector{Symbol})
-    mapreduce(Base.Fix1(symbol_indices,model),vcat,syms)
+function symbol_indices(model, syms::AbstractVector{Symbol})
+    mapreduce(Base.Fix1(symbol_indices, model), vcat, syms)
 end
 """
     set_model(estimation_model::AbstractEstimationModel{M}, new_model::M) -> AbstractEstimationModel{M}
@@ -117,7 +119,7 @@ different EoS instance while reusing the same index/factor metadata.
 
 The function defaults to setting the `model` field to the new model.
 """
-function set_model(est_model,model)
+function set_model(est_model, model)
     @set est_model.model = model
 end
 
@@ -132,70 +134,69 @@ get_model(est_model) = est_model.model
 
 #indexing interface for #AbstractEstimationModel
 
-function get_eos_parameters(other_model::M,model::AbstractEstimationModel{M}) where M
-    new_model = set_model(model,other_model)
+function get_eos_parameters(other_model::M, model::AbstractEstimationModel{M}) where M
+    new_model = set_model(model, other_model)
     get_eos_parameters(new_model)
 end
 
-function set_eos_parameters!(other_model::M,model::AbstractEstimationModel{M},Θ) where M
-    new_model = set_model(model,other_model)
-    set_eos_parameters!(new_model,Θ)
+function set_eos_parameters!(other_model::M, model::AbstractEstimationModel{M}, Θ) where M
+    new_model = set_model(model, other_model)
+    set_eos_parameters!(new_model, Θ)
 end
 
 #slow fallbacks, but they allow easy definitions
-function Base.getindex(model::AbstractEstimationModel,i::Int)
+function Base.getindex(model::AbstractEstimationModel, i::Int)
     Θ = get_eos_parameters(model)
     return Θ[i]
 end
 
-Base.BroadcastStyle(::Type{<:T}) where T <: AbstractEstimationModel = Broadcast.Style{T}()
+Base.BroadcastStyle(::Type{<:T}) where T<:AbstractEstimationModel = Broadcast.Style{T}()
 Base.size(m::AbstractEstimationModel) = (parameter_length(m),)
 
-function Base.copyto!(model::AbstractEstimationModel,Θ::AbstractVector)
-    set_eos_parameters!(model,Θ)
+function Base.copyto!(model::AbstractEstimationModel, Θ::AbstractVector)
+    set_eos_parameters!(model, Θ)
 end
 
-function Base.copyto!(model::AbstractEstimationModel,Θ::Base.Broadcast.Broadcasted)
-    set_eos_parameters!(model,collect(Θ))
+function Base.copyto!(model::AbstractEstimationModel, Θ::Base.Broadcast.Broadcasted)
+    set_eos_parameters!(model, collect(Θ))
 end
 
-function Base.getindex(model::AbstractEstimationModel,s::Symbol)
-    I = symbol_indices(model,s)
+function Base.getindex(model::AbstractEstimationModel, s::Symbol)
+    I = symbol_indices(model, s)
     Θ = get_eos_parameters(model)
     return Θ[I]
 end
 
-function Base.getindex(model::AbstractEstimationModel,s::AbstractVector{Symbol})
-    I = symbol_indices(model,s)
+function Base.getindex(model::AbstractEstimationModel, s::AbstractVector{Symbol})
+    I = symbol_indices(model, s)
     Θ = get_eos_parameters(model)
     return Θ[I]
 end
 
-function Base.setindex!(model::AbstractEstimationModel,Θ_new,i::Int)
+function Base.setindex!(model::AbstractEstimationModel, Θ_new, i::Int)
     Θ = get_eos_parameters(model)
     Θ[i] = Θ_new
-    set_eos_parameters!(model,Θ)
+    set_eos_parameters!(model, Θ)
     return Θ_new
 end
 
-function Base.setindex!(model::AbstractEstimationModel,Θ_new,s::Symbol)
-    i = symbol_indices(model,s)
+function Base.setindex!(model::AbstractEstimationModel, Θ_new, s::Symbol)
+    i = symbol_indices(model, s)
     Θ = get_eos_parameters(model)
-    Θi =  @view Θ[i]
+    Θi = @view Θ[i]
     Θi .= Θ_new
-    set_eos_parameters!(model,Θ)
+    set_eos_parameters!(model, Θ)
     return Θ_new
 end
 
-function Base.setindex!(model::AbstractEstimationModel,Θ_new,s::AbstractVector{Symbol})
-    i = symbol_indices(model,s)
+function Base.setindex!(model::AbstractEstimationModel, Θ_new, s::AbstractVector{Symbol})
+    i = symbol_indices(model, s)
     Θ = get_eos_parameters(model)
-    Θi =  @view Θ[i]
+    Θi = @view Θ[i]
     Θi .= Θ_new
-    set_eos_parameters!(model,Θ)
+    set_eos_parameters!(model, Θ)
     return Θ_new
 end
-
 
 #mandatory API for AbstractEstimationLoss
 """
@@ -216,7 +217,6 @@ Evaluate the scalar objective (loss) for `model` given the experimental data sto
 """
 function objective_function end
 
-
 """
     lower_bounds(model) -> Vector{Float64}
 
@@ -227,7 +227,7 @@ Elements are `-Inf` for parameters with no lower bound. Used to configure box-co
 function lower_bounds(model::AbstractEstimationModel)
     n = parameter_length(model)
     T = eltype(get_model(model))
-    fill(n,T(-Inf))
+    fill(n, T(-Inf))
 end
 
 """
@@ -240,7 +240,7 @@ Elements are `+Inf` for parameters with no upper bound. Used to configure box-co
 function upper_bounds(model::AbstractEstimationModel)
     n = parameter_length(model)
     T = eltype(get_model(model))
-    fill(n,T(Inf))
+    fill(n, T(Inf))
 end
 
 """
@@ -251,20 +251,20 @@ The default implementation just returns `get_eos_parameters(model)`.
 """
 initial_guess(model::AbstractEstimationModel) = get_eos_parameters(model)
 
-function Base.show(io::IO,::MIME"text/plain",model::AbstractEstimationModel)
-    print(io,typeof(model).name.name)
-    print(io," for ")
-    print(io,get_model(model))
+function Base.show(io::IO, ::MIME"text/plain", model::AbstractEstimationModel)
+    print(io, typeof(model).name.name)
+    print(io, " for ")
+    print(io, get_model(model))
     np = parameter_length(model)
-    print(io," with ")
-    print(io,np)
-    print(io," parameter")
-    np != 1 && print(io,"s")
-    println(io,":")
-    Base.print_matrix(io,EstimationUtils.get_eos_parameters(model))
+    print(io, " with ")
+    print(io, np)
+    print(io, " parameter")
+    np != 1 && print(io, "s")
+    println(io, ":")
+    Base.print_matrix(io, EstimationUtils.get_eos_parameters(model))
 end
 
-export AbstractEstimationLoss,AbstractEstimationModel
+export AbstractEstimationLoss, AbstractEstimationModel
 export set_eos_parameters!, get_eos_parameters, get_model, set_model, symbol_indices
 export lower_bounds, upper_bounds, initial_guess
 export objective_function
@@ -272,7 +272,7 @@ export objective_function
 end #module
 
 #default loss
-__mse(pred,exp) = abs2((pred-exp)/exp)
+__mse(pred, exp) = abs2((pred-exp)/exp)
 
 #default error types used by EstimationData
 const ERRORTYPES = [:error_abs, :error_rel, :error_std]

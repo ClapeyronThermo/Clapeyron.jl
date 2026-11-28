@@ -5,8 +5,8 @@ struct BoundedLineSearch{T,LS} <: NLSolvers.LineSearcher
     decay::Float64
 end
 
-function find_alpha_bounds(x, d, lo, hi, alpha0 = one(Base.promote_eltype(x,d,lo,hi)),decay = 0.99)
-    _1 = one(Base.promote_eltype(x,d,lo,hi))
+function find_alpha_bounds(x, d, lo, hi, alpha0=one(Base.promote_eltype(x, d, lo, hi)), decay=0.99)
+    _1 = one(Base.promote_eltype(x, d, lo, hi))
     alpha = _1*alpha0
     _0 = zero(_1)
     for i in eachindex(x)
@@ -21,14 +21,14 @@ function find_alpha_bounds(x, d, lo, hi, alpha0 = one(Base.promote_eltype(x,d,lo
         end
         # If d[i] == 0, no constraint from this component
     end
-    
+
     return alpha
 end
 
-BoundedLineSearch(lb::T,ub::T) where T = BoundedLineSearch(lb,ub,0.99,NLSolvers.Backtracking())
+BoundedLineSearch(lb::T, ub::T) where T = BoundedLineSearch(lb, ub, 0.99, NLSolvers.Backtracking())
 
-function BoundedLineSearch(lb::T,ub::T,decay::Number, ls::NLSolvers.LineSearcher) where T
-    BoundedLineSearch{T,typeof(ls)}(lb,ub,ls,Float64(decay))
+function BoundedLineSearch(lb::T, ub::T, decay::Number, ls::NLSolvers.LineSearcher) where T
+    BoundedLineSearch{T,typeof(ls)}(lb, ub, ls, Float64(decay))
 end
 
 function NLSolvers.find_steplength(mstyle, ls::BoundedLineSearch{F,LS}, φ, λ::T) where {F,LS,T}

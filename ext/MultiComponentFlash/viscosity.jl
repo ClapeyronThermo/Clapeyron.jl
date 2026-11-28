@@ -1,4 +1,4 @@
-function M.lbc_viscosity(eos::C.EoSModel, p, temperature, ph::M.FlashedPhase{T}; coeff = (0.1023, 0.023364, 0.058533, -0.040758, 0.0093324), shift = -1e-4) where T
+function M.lbc_viscosity(eos::C.EoSModel, p, temperature, ph::M.FlashedPhase{T}; coeff=(0.1023, 0.023364, 0.058533, -0.040758, 0.0093324), shift=-1e-4) where T
     z = ph.mole_fractions
 
     mw_mix, P_pc, T_pc, V_pc = M.pseudo_critical_properties(eos, z)
@@ -23,41 +23,41 @@ function M.lbc_viscosity(eos::C.EoSModel, p, temperature, ph::M.FlashedPhase{T};
 end
 
 function M.pseudo_critical_properties(model::C.EoSModel, z::V) where V<:AbstractVector{T} where T
-    mw = C.molecular_weight(model,z)
+    mw = C.molecular_weight(model, z)
     pure = C.split_model(model)
     crit = C.crit_pure.(pure)
     tc = [crit[i][1] for i in 1:length(model)]
     pc = [crit[i][2] for i in 1:length(model)]
     vc = [crit[i][3] for i in 1:length(model)]
-    Tc = C.dot(tc,z)
-    Pc = C.dot(pc,z)
-    Vc = C.dot(vc,z)
-    return mw,Pc,Tc,Vc
+    Tc = C.dot(tc, z)
+    Pc = C.dot(pc, z)
+    Vc = C.dot(vc, z)
+    return mw, Pc, Tc, Vc
 end
 
 function M.pseudo_critical_properties(model::C.MultiFluid, z::V) where V<:AbstractVector{T} where T
-    mw = C.molecular_weight(model,z)
+    mw = C.molecular_weight(model, z)
     tc = model.params.Tc.values
     pc = model.params.Pc.values
     vc = model.params.Vc.values
-    Tc = C.dot(tc,z)
-    Pc = C.dot(pc,z)
-    Vc = C.dot(vc,z)
-    return mw,Pc,Tc,Vc
+    Tc = C.dot(tc, z)
+    Pc = C.dot(pc, z)
+    Vc = C.dot(vc, z)
+    return mw, Pc, Tc, Vc
 end
 
 function M.pseudo_critical_properties(model::C.CubicModel, z::V) where V<:AbstractVector{T} where T
-    mw = C.molecular_weight(model,z)
+    mw = C.molecular_weight(model, z)
     tc = model.params.Tc.values
     pc = model.params.Pc.values
-    Tc = C.dot(tc,z)
-    Pc = C.dot(pc,z)
+    Tc = C.dot(tc, z)
+    Pc = C.dot(pc, z)
     pures = C.split_pure_model(model)
-    Vc = zero(Base.promote_eltype(model,Tc,Pc))
+    Vc = zero(Base.promote_eltype(model, Tc, Pc))
     for i in 1:length(z)
-        Vc += z[i]*C.volume(pures[i],pc[i],tc[i])
+        Vc += z[i]*C.volume(pures[i], pc[i], tc[i])
     end
-    return mw,Pc,Tc,Vc
+    return mw, Pc, Tc, Vc
 end
 
 function M.atmospheric_mu_estimate(model::C.EoSModel, z::V, temperature) where V<:AbstractVector{T} where T
@@ -67,7 +67,7 @@ function M.atmospheric_mu_estimate(model::C.EoSModel, z::V, temperature) where V
     Pc = model.params.Pc.values
     Mw = C.mw(model)
     @inbounds for i in 1:length(model)
-        mw = Mw[i]/1000.
+        mw = Mw[i]/1000.0
         T_c = Tc[i]
         p_c = Pc[i]
         zi = z[i]

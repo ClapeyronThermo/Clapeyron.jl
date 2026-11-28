@@ -1,14 +1,14 @@
-function __psi_res(model,T,rhovec)
+function __psi_res(model, T, rhovec)
     nc = length(model)
     _rhovec = @view rhovec[1:nc]
-    return psi_res(model,T,_rhovec)
+    return psi_res(model, T, _rhovec)
 end
 
-function __psi_res(model,data)
+function __psi_res(model, data)
     nc = length(model)
     rhovec = @view data[1:nc]
     T = data[nc + 1]
-    return psi_res(model,T,rhovec)
+    return psi_res(model, T, rhovec)
 end
 
 StaticForwardDiffTags.inner_function(::typeof(__psi_res)) = psi_res
@@ -21,19 +21,19 @@ function __μpr(model, T, ρ, cache)
         TT = Base.promote_eltype(model, T, ρ)
         if cache isa ∂lnϕCache
             μr = cache.lnϕ
-            fill!(μr,0)
+            fill!(μr, 0)
         elseif cache isa AbstractVector
             μr = cache
-            fill!(μr,0)
+            fill!(μr, 0)
         else
             nz = length(ρ)
             μr = zeros(TT, nz)
         end
-        return μr,zero(TT)*one(eltype(μr))
+        return μr, zero(TT)*one(eltype(μr))
     end
 
     #deferred forwarddiff tag for faster AD in some cases
-    Ψ = @deferred_isochoric_rhovec(__psi_res,psi_res)
+    Ψ = @deferred_isochoric_rhovec(__psi_res, psi_res)
     if cache isa ∂lnϕCache
         aux = cache.aux
         ρᵢ = @view aux[1:nc]
@@ -57,12 +57,7 @@ function __μpr(model, T, ρ, cache)
 end
 
 # Function to compute fugacity coefficient
-function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
-            phase=:unknown,
-            vol0=nothing,
-            threaded = true,
-            vol = volume(model,p,T,z;phase,vol0,threaded))
-
+function lnϕ(model::EoSModel, p, T, z=SA[1.0], cache=nothing; phase=:unknown, vol0=nothing, threaded=true, vol=volume(model, p, T, z; phase, vol0, threaded))
     ∑z = sum(z)
     RT = Rgas(model)*T
     logZ = log(p*vol/RT/∑z)
@@ -73,11 +68,11 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
     elseif cache isa ∂lnϕCache
         lnϕ_out = cache.lnϕ
         if nc == 1
-            lnϕ_out[1] = VT_∑zlogϕ(model,vol/∑z,T,SA[1.0],p)
+            lnϕ_out[1] = VT_∑zlogϕ(model, vol/∑z, T, SA[1.0], p)
         else
             rhovec = @view cache.aux[1:nc]
             rhovec .= z ./ vol
-            μ_res_RT,_ = __μpr(model,T,rhovec,cache)
+            μ_res_RT, _ = __μpr(model, T, rhovec, cache)
             lnϕ_out .= μ_res_RT .- logZ
         end
     else
@@ -92,48 +87,29 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
     return lnϕ_out, vol
 end
 
-function lnϕ(model::IdealModel, p, T, z=SA[1.],cache = nothing;
-            phase=:unknown,
-            vol0=nothing,
-            threaded = true,
-            vol = volume(model,p,T,z;phase,vol0,threaded))
-
+function lnϕ(model::IdealModel, p, T, z=SA[1.0], cache=nothing; phase=:unknown, vol0=nothing, threaded=true, vol=volume(model, p, T, z; phase, vol0, threaded))
     lnϕ = FillArrays.Zeros(length(z))
     return lnϕ, vol
 end
 
-function lnϕ!(cache::∂lnϕCache, model::EoSModel, p, T, z=SA[1.];
-            phase=:unknown,
-            vol0=nothing,
-            threaded = true,
-            vol = volume(model,p,T,z;phase,vol0,threaded))
+function lnϕ!(cache::∂lnϕCache, model::EoSModel, p, T, z=SA[1.0]; phase=:unknown, vol0=nothing, threaded=true, vol=volume(model, p, T, z; phase, vol0, threaded))
+    is_idealmodel(model) && return (fill!(cache[3], 0.0), vol)
 
-    is_idealmodel(model) && return (fill!(cache[3],0.0),vol)
-
-    return lnϕ(model,p,T,z,cache;vol)
+    return lnϕ(model, p, T, z, cache; vol)
 end
 
-function lnϕ!(cache::Nothing, model::EoSModel, p, T, z=SA[1.];
-            phase=:unknown,
-            vol0=nothing,
-            threaded = true,
-            vol = volume(model,p,T,z;phase,vol0,threaded))
-    return lnϕ(model,p,T,z;vol)
+function lnϕ!(cache::Nothing, model::EoSModel, p, T, z=SA[1.0]; phase=:unknown, vol0=nothing, threaded=true, vol=volume(model, p, T, z; phase, vol0, threaded))
+    return lnϕ(model, p, T, z; vol)
 end
 
-function lnϕ!(lnϕ_vec::AbstractVector, model::EoSModel, p, T, z=SA[1.],cache = nothing;
-            phase=:unknown,
-            vol0=nothing,
-            threaded = true,
-            vol = volume(model,p,T,z;phase,vol0,threaded))
-
+function lnϕ!(lnϕ_vec::AbstractVector, model::EoSModel, p, T, z=SA[1.0], cache=nothing; phase=:unknown, vol0=nothing, threaded=true, vol=volume(model, p, T, z; phase, vol0, threaded))
     if is_idealmodel(model)
         lnϕ_vec .= 0
-        return lnϕ_vec,vol
+        return lnϕ_vec, vol
     end
 
     if cache !== nothing
-        lnϕx, _, = lnϕ(model,p,T,z,cache;vol)
+        lnϕx, _, = lnϕ(model, p, T, z, cache; vol)
         lnϕ_vec .= lnϕx
     else
         RT = Rgas(model)*T
@@ -144,13 +120,8 @@ function lnϕ!(lnϕ_vec::AbstractVector, model::EoSModel, p, T, z=SA[1.],cache =
     return lnϕ_vec, vol
 end
 
-function ∑zlogϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
-            phase=:unknown,
-            vol0=nothing,
-            threaded = true,
-            vol = volume(model,p,T,z;phase,vol0,threaded))
-
-    return VT_∑zlogϕ(model,vol,T,z,p),vol
+function ∑zlogϕ(model::EoSModel, p, T, z=SA[1.0], cache=nothing; phase=:unknown, vol0=nothing, threaded=true, vol=volume(model, p, T, z; phase, vol0, threaded))
+    return VT_∑zlogϕ(model, vol, T, z, p), vol
 end
 
 #ideal models: ψ_res = 0, so μ_res, p_res, H and ∂(p_res/RT)/∂T are zero. nH is the size of H.
@@ -159,7 +130,7 @@ function __μpr_hess_ideal(nc, T, rhovec, cache, nH)
     nc = length(model)
     if cache === nothing
         μ_res = zeros(TT, nc)
-        H = zeros(TT,(nH, nH))
+        H = zeros(TT, (nH, nH))
     else
         μ_res = cache.lnϕ
         μ_res .= 0
@@ -167,10 +138,9 @@ function __μpr_hess_ideal(nc, T, rhovec, cache, nH)
         H = result.derivs[2]
         H .= 0
     end
-    
+
     return μ_res, zero(TT), H, zero(TT)
 end
-
 
 #μ_res/RT, p_res/RT and the Hessian of Ψ over the nc densities.
 function __μpr_hess(model, T, rhovec, cache)
@@ -181,7 +151,7 @@ function __μpr_hess(model, T, rhovec, cache)
         return __μpr_hess_ideal(nc, Tx, rhovec, cache, nc)
     end
 
-    Ψ = @deferred_isochoric_rhovec(__psi_res,psi_res)
+    Ψ = @deferred_isochoric_rhovec(__psi_res, psi_res)
 
     if cache === nothing
         result = DiffResults.HessianResult(rhovec)
@@ -208,7 +178,7 @@ function __μprT_hess(model, T, rhovec, cache)
         return __μpr_hess_ideal(nc, Tx, rhovec, cache, nc + 1)
     end
 
-    Ψ = WithContext(Base.Fix1(__psi_res,model),∂Tag{psi_res})
+    Ψ = WithContext(Base.Fix1(__psi_res, model), ∂Tag{psi_res})
 
     if cache === nothing
         aux = vcat(rhovec, T)
@@ -218,17 +188,17 @@ function __μprT_hess(model, T, rhovec, cache)
         aux = cache.aux
         rhovec_aux = @view aux[1:nc]
         rhovec_aux .= rhovec
-        aux[nc+1] = T
+        aux[nc + 1] = T
         _result = ForwardDiff.hessian!(cache.result, Ψ, aux, cache.hconfig, Val{false}())
     end
 
     ∇Ψ = DiffResults.gradient(_result)
     μ_res = @view ∇Ψ[1:nc]
-    H = @view DiffResults.hessian(_result)[1:nc+1, 1:nc+1]
+    H = @view DiffResults.hessian(_result)[1:(nc + 1), 1:(nc + 1)]
     p_res = dot(μ_res, rhovec) - DiffResults.value(_result)
-    dpdT = -∇Ψ[nc+1]
+    dpdT = -∇Ψ[nc + 1]
     for i in 1:nc
-        dpdT += rhovec[i]*H[i, nc+1]
+        dpdT += rhovec[i]*H[i, nc + 1]
     end
     return μ_res, p_res, H, dpdT
 end
@@ -273,16 +243,16 @@ function _dlnϕdT!(∂lnϕ∂T, a, H, T, p_over_RT, aρ, dptotdT)
     nc = length(a)
     s = -(p_over_RT/T + dptotdT)/aρ
     for i in 1:nc
-        ∂lnϕ∂T[i] = H[i, nc+1] + 1/T + s*a[i]
+        ∂lnϕ∂T[i] = H[i, nc + 1] + 1/T + s*a[i]
     end
     return ∂lnϕ∂T
 end
 
-_dlnϕdnP!(cache::∂lnϕCache,a,H,RT,p_over_RT,aρ,vol,n) = _dlnϕdnP!(cache.∂lnϕ∂n,cache.∂lnϕ∂P,a,H,RT,p_over_RT,aρ,vol,n)
+_dlnϕdnP!(cache::∂lnϕCache, a, H, RT, p_over_RT, aρ, vol, n) = _dlnϕdnP!(cache.∂lnϕ∂n, cache.∂lnϕ∂P, a, H, RT, p_over_RT, aρ, vol, n)
 
-function _dlnϕdnP!(::Nothing,a,H,RT,p_over_RT,aρ,vol,n)
+function _dlnϕdnP!(::Nothing, a, H, RT, p_over_RT, aρ, vol, n)
     nc = length(a)
-    ∂lnϕ∂n = similar(a,(nc,nc))
+    ∂lnϕ∂n = similar(a, (nc, nc))
     ∂lnϕ∂P = similar(a)
     return _dlnϕdnP!(∂lnϕ∂n, ∂lnϕ∂P, a, H, RT, p_over_RT, aρ, vol, n)
 end
@@ -301,12 +271,7 @@ function _dlnϕdnP!(∂lnϕ∂n, ∂lnϕ∂P, a, H, RT, p_over_RT, aρ, vol, n)
 end
 
 # Function to compute fugacity coefficient and its pressure and composition derivatives
-function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
-            phase=:unknown,
-            vol0=nothing,
-            threaded = true,
-            vol = volume(model,p,T,z;phase,vol0,threaded))
-
+function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.0], cache=∂lnϕ_cache(model, p, T, z, Val{false}()); phase=:unknown, vol0=nothing, threaded=true, vol=volume(model, p, T, z; phase, vol0, threaded))
     if is_idealmodel(model)
         if cache isa ∂lnϕCache
             fill!(cache.lnϕ, 0)
@@ -338,13 +303,7 @@ function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(
 end
 
 # Function to compute fugacity coefficient pressure derivatives
-function ∂lnϕ∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
-            phase=:unknown,
-            vol0=nothing,
-            threaded = true,
-            vol = volume(model,p,T,z;phase,vol0,threaded))
-
-
+function ∂lnϕ∂P(model::EoSModel, p, T, z=SA[1.0], cache=∂lnϕ_cache(model, p, T, z, Val{false}()); phase=:unknown, vol0=nothing, threaded=true, vol=volume(model, p, T, z; phase, vol0, threaded))
     if is_idealmodel(model)
         if cache isa ∂lnϕCache
             return fill!(cache.∂lnϕ∂P, 0), vol
@@ -361,7 +320,7 @@ function ∂lnϕ∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
     ρt = sum(z)/vol
 
     if cache === nothing
-        rhovec = zeros(Base.promote_eltype(model,p,T,z),nc)
+        rhovec = zeros(Base.promote_eltype(model, p, T, z), nc)
         rhovec .= z ./ vol
         _result = ForwardDiff.gradient!(DiffResults.GradientResult(rhovec), pᵣ, rhovec)
         ∇pᵣ = @view DiffResults.gradient(_result)[1:nc]
@@ -387,13 +346,7 @@ function ∂lnϕ∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
 end
 
 # Function to compute fugacity coefficient temperature derivatives
-function ∂lnϕ∂T(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
-            phase=:unknown,
-            vol0=nothing,
-            threaded = true,
-            vol = volume(model,p,T,z;phase,vol0,threaded))
-
-    
+function ∂lnϕ∂T(model::EoSModel, p, T, z=SA[1.0], cache=∂lnϕ_cache(model, p, T, z, Val{false}()); phase=:unknown, vol0=nothing, threaded=true, vol=volume(model, p, T, z; phase, vol0, threaded))
     if is_idealmodel(model)
         if cache isa ∂lnϕCache
             return fill!(cache.∂lnϕ∂P, 0), vol
@@ -406,7 +359,6 @@ function ∂lnϕ∂T(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
 
     if cache === nothing
         if is_idealmodel(model)
-            
         end
         rhovec = z ./ vol
     else
@@ -416,7 +368,7 @@ function ∂lnϕ∂T(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
     end
     nc = length(z)
 
-    s = -VT_isobaric_expansivity(model,vol,T,z)
+    s = -VT_isobaric_expansivity(model, vol, T, z)
 
     #T-derivative of ρₜ·a_res along the isobar, differentiated w.r.t. ρ
     function Φ(x)
@@ -440,12 +392,7 @@ function ∂lnϕ∂T(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
 end
 
 # Function to compute fugacity coefficient and its temperature, pressure and composition derivatives
-function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cache(model,p,T,z,Val{true}());
-            phase=:unknown,
-            vol0=nothing,
-            threaded = true,
-            vol = volume(model,p,T,z;phase,vol0,threaded))
-
+function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.0], cache=∂lnϕ_cache(model, p, T, z, Val{true}()); phase=:unknown, vol0=nothing, threaded=true, vol=volume(model, p, T, z; phase, vol0, threaded))
     if is_idealmodel(model)
         nz = length(z)
         if cache isa ∂lnϕCache
@@ -464,7 +411,7 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
             return zeros(TT, nz), zeros(TT, nz, nz), zeros(TT, nz), zeros(TT, nz), vol
         end
     end
- 
+
     nc = length(model)
     if cache === nothing
         rhovec = z ./ vol
@@ -476,10 +423,10 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
 
     if cache isa ∂lnϕCache && nc == length(cache.aux)
         #not enough cache for one pass, so use two
-        lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, vol = ∂lnϕ∂n∂P(model,p,T,z,cache;vol)
+        lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, vol = ∂lnϕ∂n∂P(model, p, T, z, cache; vol)
         ∂lnϕ∂T_out = cache.scratch
         ∂lnϕ∂T_out .= lnϕ                       #save lnϕ: cache.∂lnϕ∂T aliases cache.lnϕ here
-        ∂lnϕ∂T(model,p,T,z,cache;vol)           #overwrites cache.lnϕ with ∂lnϕ/∂T
+        ∂lnϕ∂T(model, p, T, z, cache; vol)           #overwrites cache.lnϕ with ∂lnϕ/∂T
         for i in 1:nc                           #swap, so lnϕ holds lnϕ and scratch holds ∂lnϕ/∂T
             lnϕ[i], ∂lnϕ∂T_out[i] = ∂lnϕ∂T_out[i], lnϕ[i]
         end
@@ -496,33 +443,33 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
 end
 
 #functions used to overload gamma-phi models
-function modified_lnϕ(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
-    lnϕz,vz = lnϕ(model, p, T, z, cache; phase, vol0)
+function modified_lnϕ(model, p, T, z, cache; phase=:unknown, vol0=nothing)
+    lnϕz, vz = lnϕ(model, p, T, z, cache; phase, vol0)
     if isnan(vz)
-        lnϕz,vz = lnϕ(model, p, T, z, cache; phase)
+        lnϕz, vz = lnϕ(model, p, T, z, cache; phase)
     end
-    return lnϕz,vz
+    return lnϕz, vz
 end
 
-modified_gibbs(model,p,T,w) = modified_gibbs(model,p,T,w,:unknown,oftype(zero(Base.promote_eltype(model,p,T,w)),NaN))
-modified_gibbs(model,p,T,w,phase) = modified_gibbs(model,p,T,w,phase,oftype(zero(Base.promote_eltype(model,p,T,w)),NaN))
+modified_gibbs(model, p, T, w) = modified_gibbs(model, p, T, w, :unknown, oftype(zero(Base.promote_eltype(model, p, T, w)), NaN))
+modified_gibbs(model, p, T, w, phase) = modified_gibbs(model, p, T, w, phase, oftype(zero(Base.promote_eltype(model, p, T, w)), NaN))
 
-function modified_gibbs(model,p,T,w,phase,vol)
+function modified_gibbs(model, p, T, w, phase, vol)
     if isnan(vol) || isnothing(vol)
-        volw = volume(model,p,T,w,phase = phase)
+        volw = volume(model, p, T, w, phase=phase)
     else
         volw = vol
     end
     RT = Rgas(model)*T
-    g = PT_property(model,p,T,w,phase,volw,VT_gibbs_energy)
-    return g/RT,volw
+    g = PT_property(model, p, T, w, phase, volw, VT_gibbs_energy)
+    return g/RT, volw
 end
 
-_dlnϕdn!(cache::∂lnϕCache,a,H,RT,p_over_RT,aρ,vol,n) = _dlnϕdn!(cache.∂lnϕ∂n,a,H,RT,p_over_RT,aρ,vol,n)
+_dlnϕdn!(cache::∂lnϕCache, a, H, RT, p_over_RT, aρ, vol, n) = _dlnϕdn!(cache.∂lnϕ∂n, a, H, RT, p_over_RT, aρ, vol, n)
 
-function _dlnϕdn!(::Nothing,a,H,RT,p_over_RT,aρ,vol,n)
+function _dlnϕdn!(::Nothing, a, H, RT, p_over_RT, aρ, vol, n)
     nc = length(a)
-    ∂lnϕ∂n = similar(a,(nc,nc))
+    ∂lnϕ∂n = similar(a, (nc, nc))
     return _dlnϕdn!(∂lnϕ∂n, a, H, RT, p_over_RT, aρ, vol, n)
 end
 
@@ -538,8 +485,8 @@ function _dlnϕdn!(∂lnϕ∂n, a, H, RT, p_over_RT, aρ, vol, n)
     return ∂lnϕ∂n
 end
 
-function modified_∂lnϕ∂n(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
-    vol = volume(model,p,T,z;phase,vol0,threaded = false)
+function modified_∂lnϕ∂n(model, p, T, z, cache; phase=:unknown, vol0=nothing)
+    vol = volume(model, p, T, z; phase, vol0, threaded=false)
 
     if is_idealmodel(model)
         nz = length(z)
@@ -570,7 +517,7 @@ function modified_∂lnϕ∂n(model, p, T, z, cache; phase = :unknown, vol0 = no
     return lnϕ, ∂lnϕ∂n, vol
 end
 
-function lnf(model, V, T, z,cache = nothing)
+function lnf(model, V, T, z, cache=nothing)
     RT = Rgas(model)*T
     n = sum(z)
     logZp = log(V/RT/n)
@@ -578,18 +525,18 @@ function lnf(model, V, T, z,cache = nothing)
     if cache isa ∂lnϕCache
         lnf = cache.lnϕ
         if nc == 1
-            lnf1,p = VT_lnf_pure(model,V,T)
+            lnf1, p = VT_lnf_pure(model, V, T)
             lnf[1] = lnf1
         else
             rhovec = @view cache.aux[1:nc]
             rhovec .= z ./ V
-            μ_res_RT,p_res_RT = __μpr(model, T, rhovec, cache)
+            μ_res_RT, p_res_RT = __μpr(model, T, rhovec, cache)
             p = RT*(p_res_RT + n/V)
             lnf .= μ_res_RT .- logZp
         end
     else
         rhovec = z ./ V
-        μ_res_RT,p_res_RT = __μpr(model, T, rhovec, cache)
+        μ_res_RT, p_res_RT = __μpr(model, T, rhovec, cache)
         p = RT*(p_res_RT + n/V)
         if ismutable(μ_res_RT)
             lnf = μ_res_RT
@@ -601,13 +548,13 @@ function lnf(model, V, T, z,cache = nothing)
     return lnf, p
 end
 
-function VT_lnf_pure(model,V,T)
+function VT_lnf_pure(model, V, T)
     RT = Rgas(model)*T
-    F,dFdV = f∂fdV_res(model,V,T,SA[1.0])
+    F, dFdV = f∂fdV_res(model, V, T, SA[1.0])
     p_res = -dFdV
     μ_res = F + p_res*V
     Zp = V/RT
     lnf = μ_res/RT - log(Zp)
     p = p_res + RT/V
-    return lnf,p
+    return lnf, p
 end

@@ -14,13 +14,13 @@ export LeiboviciAlpha
 
 ## Input Parameters
 
-
-- `acentricfactor`: Single Parameter (`Float64`)
+  - `acentricfactor`: Single Parameter (`Float64`)
 
 ## Description
 
 Leibovici Cubic alpha `(α(T))` model.
 Generalized Soave model that works for all common cubic models.
+
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
 Trᵢ = T/Tcᵢ
@@ -49,24 +49,23 @@ alpha = LeiboviciAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-
 
 ## References
 
-1. Leibovici, C. F. (1994). A unified m(ω) relation for cubic equations of state. Fluid Phase Equilibria, 101, 1–2. [doi:10.1016/0378-3812(94)02603-3](https://doi.org/10.1016/0378-3812(94)02603-3)
-
+ 1. Leibovici, C. F. (1994). A unified m(ω) relation for cubic equations of state. Fluid Phase Equilibria, 101, 1–2. [doi:10.1016/0378-3812(94)02603-3](https://doi.org/10.1016/0378-3812(94)02603-3)
 """
 LeiboviciAlpha
 
 default_locations(::Type{LeiboviciAlpha}) = critical_data()
 default_references(::Type{LeiboviciAlpha}) = ["10.1016/0378-3812(94)02603-3"]
 
-@inline function α_m(model::DeltaCubicModel,alpha_model::LeiboviciAlphaModel,i)
-    coeff = α_m_leibovici(model,i)
+@inline function α_m(model::DeltaCubicModel, alpha_model::LeiboviciAlphaModel, i)
+    coeff = α_m_leibovici(model, i)
     ω = alpha_model.params.acentricfactor.values[i]
-    return evalpoly(ω,coeff)
+    return evalpoly(ω, coeff)
 end
 
-function α_m_leibovici(model::DeltaCubicModel,i)
+function α_m_leibovici(model::DeltaCubicModel, i)
     T = 0.7*model.params.Tc.values[i]
     z = FillArrays.OneElement(i, length(model))
-    Δ1,Δ2 = cubic_ΔT(model,T,z)
+    Δ1, Δ2 = cubic_ΔT(model, T, z)
     u = - Δ1 - Δ2
     w = Δ1*Δ2
     u0 = (u + 2)*sqrt(2/(1 + u + w)) - 2
@@ -75,33 +74,29 @@ end
 
 #optimizations for common models
 
-function α_m_leibovici(model::PRModel,i)
+function α_m_leibovici(model::PRModel, i)
     TT = eltype(model.params.Tc)
     TT.((0.37887951, 1.4899257, -0.17308303, 0.02245493, -0.00130157))
 end
 
-function α_m_leibovici(model::RKModel,i)
+function α_m_leibovici(model::RKModel, i)
     TT = eltype(model.params.Tc)
     TT.((0.47986219, 1.57625793, -0.19430027, 0.0285643, -0.00221708))
 end
 
-function α_m_leibovici(model::vdWModel,i)
+function α_m_leibovici(model::vdWModel, i)
     TT = eltype(model.params.Tc)
     TT.((0.4999139006762875, 1.5933540719944854, -0.19856505085924195, 0.029806574867261352, -0.0024043636414418958))
 end
 
 function α_m_leibovici(u::Number)
     A = Leibovici_consts
-    a0 = evalpoly(u,A[1])
-    a1 = evalpoly(u,A[2])
-    a2 = evalpoly(u,A[3])
-    a3 = evalpoly(u,A[4])
-    a4 = evalpoly(u,A[5])
-    return (a0,a1,a2,a3,a4)
+    a0 = evalpoly(u, A[1])
+    a1 = evalpoly(u, A[2])
+    a2 = evalpoly(u, A[3])
+    a3 = evalpoly(u, A[4])
+    a4 = evalpoly(u, A[5])
+    return (a0, a1, a2, a3, a4)
 end
 
-const Leibovici_consts = ((0.61090441, -0.14983477, 0.0209346, -0.00227238, 0.00013033),
-(1.68811978, -0.12822686, 0.01842279, -0.00218662, 0.00012884),
-(-0.22275603, 0.03341062, -0.00574116, 0.00084555, -5.925e-5),
-(0.03702243, -0.01018267, 0.00205506, -0.00035826, 2.773e-5),
-(-0.00351123, 0.00158691, -0.00035556, 6.834e-5, -5.54e-6))
+const Leibovici_consts = ((0.61090441, -0.14983477, 0.0209346, -0.00227238, 0.00013033), (1.68811978, -0.12822686, 0.01842279, -0.00218662, 0.00012884), (-0.22275603, 0.03341062, -0.00574116, 0.00084555, -5.925e-5), (0.03702243, -0.01018267, 0.00205506, -0.00035826, 2.773e-5), (-0.00351123, 0.00158691, -0.00035556, 6.834e-5, -5.54e-6))

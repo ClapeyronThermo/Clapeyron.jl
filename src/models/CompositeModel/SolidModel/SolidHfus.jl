@@ -17,13 +17,14 @@ end
 
 ## Parameters
 
-- `Hfus`: Single Parameter (`Float64`) - Enthalpy of Fusion at 1 bar `[J·mol⁻¹]`
-- `Tm`: Single Parameter (`Float64`) - Melting Temperature `[K]`
-- `CpSL`: Single Parameter (`Float64`) (optional) - Heat Capacity of the Solid-Liquid Phase Transition `[J·mol⁻¹·K⁻¹]`
+  - `Hfus`: Single Parameter (`Float64`) - Enthalpy of Fusion at 1 bar `[J·mol⁻¹]`
+  - `Tm`: Single Parameter (`Float64`) - Melting Temperature `[K]`
+  - `CpSL`: Single Parameter (`Float64`) (optional) - Heat Capacity of the Solid-Liquid Phase Transition `[J·mol⁻¹·K⁻¹]`
 
 ## Description
 
 Approximation of the excess chemical potential in the solid phase (`CpSL` is not necessary by default):
+
 ```
 ln(xᵢγᵢ) = Hfusᵢ/R̄*(1/Tmᵢ-1/T) + CpSLᵢ/R̄*(Tmᵢ/T-1-log(Tmᵢ/T))
 ```
@@ -37,31 +38,31 @@ default_ignore_missing_singleparams(::Type{SolidHfus}) = ["CpSL"]
 sle_T_ref(model::SolidHfusModel) = model.params.Tm.values
 
 #the fusion data of a solid formed by several components refers to the stoichiometric liquid at Tm
-function sle_Δμ(solid::SolidHfusModel,model,p,T,j)
-    Δμ = sle_pure_solid_μ(solid,p,T,j)/(Rgas(model.fluid)*T)
-    idx,ν = sle_mapping(model,j)
+function sle_Δμ(solid::SolidHfusModel, model, p, T, j)
+    Δμ = sle_pure_solid_μ(solid, p, T, j)/(Rgas(model.fluid)*T)
+    idx, ν = sle_mapping(model, j)
     isone(length(idx)) && return Δμ
     zref = ν ./ sum(ν)
-    fluid_j,_ = index_reduction(model.fluid,(1:length(model.fluid)) .∈ Ref(idx))
-    γref = activity_coefficient(fluid_j,p,sle_T_ref(solid)[j],zref;phase = :l)
+    fluid_j, _ = index_reduction(model.fluid, (1:length(model.fluid)) .∈ Ref(idx))
+    γref = activity_coefficient(fluid_j, p, sle_T_ref(solid)[j], zref; phase=:l)
     return Δμ + sum(ν .* log.(zref .* γref))
 end
 
-function chemical_potential_impl(model::SolidHfusModel,p,T,z,phase,threaded,vol0)
+function chemical_potential_impl(model::SolidHfusModel, p, T, z, phase, threaded, vol0)
     Hfus = model.params.Hfus.values
     Tm = model.params.Tm.values
     CpSL = model.params.CpSL.values
     return @. Hfus*(T/Tm-1)+CpSL*(Tm-T-T*log(Tm/T))
 end
 
-p_scale(model::SolidHfusModel,z) = 101325.0
-T_scale(model::SolidHfusModel,z) = dot(model.params.Tm.values,z)/sum(z)
+p_scale(model::SolidHfusModel, z) = 101325.0
+T_scale(model::SolidHfusModel, z) = dot(model.params.Tm.values, z)/sum(z)
 
-function eos_g(model::SolidHfusModel,p,T,z)
+function eos_g(model::SolidHfusModel, p, T, z)
     Hfus = model.params.Hfus.values
     Tm = model.params.Tm.values
     CpSL = model.params.CpSL.values
-    g = zero(Base.promote_eltype(model,T,z))
+    g = zero(Base.promote_eltype(model, T, z))
     for i in 1:length(model)
         Tmi = Tm[i]
         μi = Hfus[i]*(T/Tmi-1)+CpSL[i]*(Tmi-T-T*log(Tmi/T))
@@ -70,21 +71,21 @@ function eos_g(model::SolidHfusModel,p,T,z)
     return g
 end
 
-function init_preferred_method(method::typeof(melting_pressure),model::CompositeModel{<:GibbsBasedModel,<:SolidHfusModel},kwargs...)
+function init_preferred_method(method::typeof(melting_pressure), model::CompositeModel{<:GibbsBasedModel,<:SolidHfusModel}, kwargs...)
     return MeltingCorrelation()
 end
 
-function init_preferred_method(method::typeof(melting_pressure),model::SolidHfusModel,kwargs...)
+function init_preferred_method(method::typeof(melting_pressure), model::SolidHfusModel, kwargs...)
     return MeltingCorrelation()
 end
 
-function melting_pressure_impl(model::CompositeModel{<:EoSModel,<:SolidHfusModel},T,method::MeltingCorrelation)
-    P,vs,_ = melting_pressure_impl(model.solid,T,method)
-    vl = volume(model.fluid,P,T,phase = :l)
-    return P,vs,vl
+function melting_pressure_impl(model::CompositeModel{<:EoSModel,<:SolidHfusModel}, T, method::MeltingCorrelation)
+    P, vs, _ = melting_pressure_impl(model.solid, T, method)
+    vl = volume(model.fluid, P, T, phase=:l)
+    return P, vs, vl
 end
 
-function melting_pressure_impl(model::SolidHfusModel,T,method::MeltingCorrelation)
+function melting_pressure_impl(model::SolidHfusModel, T, method::MeltingCorrelation)
     Hfus = model.params.Hfus.values[1]
     Tm = model.params.Tm.values[1]
     Pm = 1e5
@@ -97,25 +98,25 @@ function melting_pressure_impl(model::SolidHfusModel,T,method::MeltingCorrelatio
     return P, nan, nan
 end
 
-function init_preferred_method(method::typeof(melting_temperature),model::CompositeModel{<:GibbsBasedModel,<:SolidHfusModel},kwargs...)
+function init_preferred_method(method::typeof(melting_temperature), model::CompositeModel{<:GibbsBasedModel,<:SolidHfusModel}, kwargs...)
     return MeltingCorrelation()
 end
 
-function init_preferred_method(method::typeof(melting_temperature),model::SolidHfusModel,kwargs...)
+function init_preferred_method(method::typeof(melting_temperature), model::SolidHfusModel, kwargs...)
     return MeltingCorrelation()
 end
 
-function melting_temperature(model::CompositeModel{<:Any,<:SolidHfusModel},P,method::ThermodynamicMethod)
-    return melting_temperature_impl(model,P,method)
+function melting_temperature(model::CompositeModel{<:Any,<:SolidHfusModel}, P, method::ThermodynamicMethod)
+    return melting_temperature_impl(model, P, method)
 end
 
-function melting_temperature_impl(model::CompositeModel{<:EoSModel,<:SolidHfusModel},P,method::MeltingCorrelation)
-    T,vs,_ = melting_temperature_impl(model.solid,P,method)
-    vl = volume(fluid_model(model),P,T,SA[1.0],phase = :l)
-    return T,vs,vl
+function melting_temperature_impl(model::CompositeModel{<:EoSModel,<:SolidHfusModel}, P, method::MeltingCorrelation)
+    T, vs, _ = melting_temperature_impl(model.solid, P, method)
+    vl = volume(fluid_model(model), P, T, SA[1.0], phase=:l)
+    return T, vs, vl
 end
 
-function melting_temperature_impl(model::SolidHfusModel,P,method::MeltingCorrelation)
+function melting_temperature_impl(model::SolidHfusModel, P, method::MeltingCorrelation)
     Hfus = model.params.Hfus.values[1]
     Tm = model.params.Tm.values[1]
     Pm = 1e5
@@ -124,18 +125,18 @@ function melting_temperature_impl(model::SolidHfusModel,P,method::MeltingCorrela
     return T, nan, nan
 end
 
-function x0_eutectic_point(model::SolidHfusModel,p)
+function x0_eutectic_point(model::SolidHfusModel, p)
     Hfus = model.params.Hfus.values
     Tm = model.params.Tm.values
     R = Rgas(model)
-    K1,K2 = -Hfus[1]/R,-Hfus[2]/R
-    T1,T2 = Tm[1],Tm[2]
-    return ideal_eutectic_solver(K1,K2,T1,T2)
+    K1, K2 = -Hfus[1]/R, -Hfus[2]/R
+    T1, T2 = Tm[1], Tm[2]
+    return ideal_eutectic_solver(K1, K2, T1, T2)
 end
 
-function eutectic_point(model::SolidHfusModel,p=1e5; x0=nothing)
-    T,x1 = x0_eutectic_point(model,p)
-    return T,FractionVector(x1)
+function eutectic_point(model::SolidHfusModel, p=1e5; x0=nothing)
+    T, x1 = x0_eutectic_point(model, p)
+    return T, FractionVector(x1)
 end
 
 export SolidHfus

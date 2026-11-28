@@ -19,7 +19,7 @@ None
 
 ## Input models
 
-- `activity`: Activity Model
+  - `activity`: Activity Model
 
 ## Description
 
@@ -27,6 +27,7 @@ Mixing Rule used by the Predictive Soave-Redlich-Kwong [`PSRK`](@ref) EoS,
 derived from the First Order modified Huron-Vidal Mixing Rule.
 
 ## Model Construction Examples
+
 ```
 # Note: this model was meant to be used exclusively with the PSRKUNIFAC activity model.
 
@@ -57,14 +58,14 @@ mixing = PSRKRule(["water","ethanol"];
 PSRKRule
 
 export PSRKRule
-function PSRKRule(components; activity = PSRKUNIFAC, userlocations = String[],activity_userlocations = String[], verbose::Bool=false)
-    _activity = init_mixing_act(activity,components,activity_userlocations,verbose)
+function PSRKRule(components; activity=PSRKUNIFAC, userlocations=String[], activity_userlocations=String[], verbose::Bool=false)
+    _activity = init_mixing_act(activity, components, activity_userlocations, verbose)
     references = String["10.1016/0378-3812(91)85038-V"]
-    model = PSRKRule(format_components(components), _activity,references)
+    model = PSRKRule(format_components(components), _activity, references)
     return model
 end
 
-MHV1q(::PSRKRule,::RKModel) = 0.64663
+MHV1q(::PSRKRule, ::RKModel) = 0.64663
 
 function PSRKUNIFAC end
 """
@@ -84,32 +85,19 @@ function PSRKUNIFAC end
     verbose = false)
 
 ## Description
+
 Predictive Soave-Redlich-Kwong equation of state. It uses the following models:
 
-- Translation Model: [`PenelouxTranslation`](@ref)
-- Alpha Model: [`SoaveAlpha`](@ref)
-- Mixing Rule Model: [`PSRKRule`](@ref) with [`PSRKUNIFAC`](@ref) activity model
+  - Translation Model: [`PenelouxTranslation`](@ref)
+  - Alpha Model: [`SoaveAlpha`](@ref)
+  - Mixing Rule Model: [`PSRKRule`](@ref) with [`PSRKUNIFAC`](@ref) activity model
 
-##  References
+## References
 
-1. Horstmann, S., Jabłoniec, A., Krafczyk, J., Fischer, K., & Gmehling, J. (2005). PSRK group contribution equation of state: comprehensive revision and extension IV, including critical constants and α-function parameters for 1000 components. Fluid Phase Equilibria, 227(2), 157–164. [doi:10.1016/j.fluid.2004.11.002](https://doi.org/10.1016/j.fluid.2004.11.002)
+ 1. Horstmann, S., Jabłoniec, A., Krafczyk, J., Fischer, K., & Gmehling, J. (2005). PSRK group contribution equation of state: comprehensive revision and extension IV, including critical constants and α-function parameters for 1000 components. Fluid Phase Equilibria, 227(2), 157–164. [doi:10.1016/j.fluid.2004.11.002](https://doi.org/10.1016/j.fluid.2004.11.002)
 """
-function PSRK(components;
-    idealmodel = BasicIdeal,
-    userlocations = String[],
-    group_userlocations = String[],
-    ideal_userlocations = String[],
-    alpha_userlocations = String[],
-    mixing_userlocations = String[],
-    activity_userlocations = String[],
-    translation_userlocations = String[],
-    reference_state = nothing,
-    verbose = false)
-
-    activity = PSRKUNIFAC(components,
-    userlocations = activity_userlocations,
-    group_userlocations = group_userlocations,
-    verbose = verbose)
+function PSRK(components; idealmodel=BasicIdeal, userlocations=String[], group_userlocations=String[], ideal_userlocations=String[], alpha_userlocations=String[], mixing_userlocations=String[], activity_userlocations=String[], translation_userlocations=String[], reference_state=nothing, verbose=false)
+    activity = PSRKUNIFAC(components, userlocations=activity_userlocations, group_userlocations=group_userlocations, verbose=verbose)
 
     _components = activity.groups.components #extract pure component list
 
@@ -117,19 +105,6 @@ function PSRK(components;
     mixing = PSRKRule
     translation = PenelouxTranslation
 
-    return RK(_components;
-    idealmodel = idealmodel,
-    alpha = alpha,
-    mixing = mixing,
-    activity = activity,
-    translation = translation,
-    userlocations = userlocations,
-    ideal_userlocations = ideal_userlocations,
-    alpha_userlocations = alpha_userlocations,
-    mixing_userlocations = mixing_userlocations,
-    activity_userlocations = activity_userlocations,
-    translation_userlocations = translation_userlocations,
-    reference_state = reference_state,
-    verbose = verbose)
+    return RK(_components; idealmodel=idealmodel, alpha=alpha, mixing=mixing, activity=activity, translation=translation, userlocations=userlocations, ideal_userlocations=ideal_userlocations, alpha_userlocations=alpha_userlocations, mixing_userlocations=mixing_userlocations, activity_userlocations=activity_userlocations, translation_userlocations=translation_userlocations, reference_state=reference_state, verbose=verbose)
 end
 export PSRK

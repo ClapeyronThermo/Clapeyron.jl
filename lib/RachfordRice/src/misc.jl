@@ -1,17 +1,17 @@
 rr_any(::Nothing) = false
 rr_any(rr::AbstractVector) = any(rr)
-rr_any(::Nothing,i) = false
-rr_any(rr::AbstractVector,i) = rr[i]::Bool
+rr_any(::Nothing, i) = false
+rr_any(rr::AbstractVector, i) = rr[i]::Bool
 
 #verbosity: default is nothing, so no side-effects if verbose is not provided.
 
 is_verbose(::Nothing) = false
 is_verbose(verbose::Bool) = verbose
 
-function __log_K_norm(K::AbstractVector{T},non_inx,non_iny) where T
+function __log_K_norm(K::AbstractVector{T}, non_inx, non_iny) where T
     rr_any(non_inx) && return T(Inf)
     rr_any(non_iny) && return T(Inf)
-    return maximum(abs ∘ log,K)
+    return maximum(abs ∘ log, K)
 end
 
 """
@@ -86,4 +86,4 @@ function discriminant(a::T, b::T, c::T) where {T<:AbstractFloat}
     return (p - q) + (dp - dq)
 end
 
-discriminant(a,b,c) = b*b - a*c
+discriminant(a, b, c) = b*b - a*c

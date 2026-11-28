@@ -6,7 +6,7 @@ Interface function used in cubic models. It should return a vector of cᵢ. Such
 ## Example:
 
 ```julia
-function translation(model::CubicModel,V,T,z,translation_model::RackettTranslation)
+function translation(model::CubicModel, V, T, z, translation_model::RackettTranslation)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
     Vc = translation_model.params.Vc.values
@@ -19,26 +19,26 @@ end
 """
 function translation end
 
-translation(model::CubicModel,V,T,z) = translation(model,V,T,z,model.translation)
+translation(model::CubicModel, V, T, z) = translation(model, V, T, z, model.translation)
 
-function translation(model,V,T,z,translation)
+function translation(model, V, T, z, translation)
     ∑z = sum(z)
     v = V/∑z
     _1 = oneunit(∑z)
     n = length(model)
-    z1 = FillArrays.OneElement(_1,1,n)
-    c1 = translation2(model,v,T,z1,translation,nothing,nothing,nothing)
-    c = similar(z,typeof(c1))
+    z1 = FillArrays.OneElement(_1, 1, n)
+    c1 = translation2(model, v, T, z1, translation, nothing, nothing, nothing)
+    c = similar(z, typeof(c1))
     c[1] = c1
     for i in 1:n
-        zi = FillArrays.OneElement(_1,i,n)
-        ci = translation2(model,v,T,zi,translation,nothing,nothing,nothing)
+        zi = FillArrays.OneElement(_1, i, n)
+        ci = translation2(model, v, T, zi, translation, nothing, nothing, nothing)
         c[i] = ci
     end
     return c
 end
 
-recombine_translation!(model::CubicModel,translation_model) = translation_model
+recombine_translation!(model::CubicModel, translation_model) = translation_model
 
 include("NoTranslation.jl")
 include("ConstantTranslation.jl")
